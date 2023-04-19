@@ -31,7 +31,9 @@ func (app *application) Routes() http.Handler {
 	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
 	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
 	mux.Post("/user/logout", dynamicMiddleware.ThenFunc(app.logoutUser))
-
+	//Register the ping handler function as the handler for the GET /ping
+	//route.
+	mux.Get("/ping", http.HandlerFunc(ping))
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Get("/static/", http.StripPrefix("/static", fileServer))
 	return standardMiddlewre.Then(mux)

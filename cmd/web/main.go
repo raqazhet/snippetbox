@@ -1,7 +1,9 @@
 package main
 
 import (
+	"alex/pkg/models"
 	"alex/pkg/models/mysql"
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"html/template"
@@ -16,9 +18,19 @@ import (
 // Add a snippets filed to the application struct.  This will allow us to
 // make the SnippetModel object available to our handlers
 type application struct {
-	users         *mysql.UserModel
-	session       *sessions.Session
-	snippets      *mysql.SnippetModel
+	errprlog *log.Logger
+	infolog  *log.Logger
+	users    interface {
+		Insert(string, string, string) error
+		Get(int) (*models.User, error)
+		Authenticate(string, string) (int, error)
+	}
+	session  *sessions.Session
+	snippets interface {
+		Insert(string, string, string) (int, error)
+		Get(int) (*models.Snippet, error)
+		Latest() ([]*models.Snippet, error)
+	}
 	templateCache map[string]*template.Template
 }
 type contextKey string
@@ -81,16 +93,16 @@ func main() {
 	}
 	//Initialize a tls.Config struct to hold the non-default TLS settings we
 	//the server to use
-	// tlsConfig := tls.Config{
-	// 	PreferServerCipherSuites: true,
-	// 	CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
-	// }
+	tlsConfig := tls.Config{
+		PreferServerCipherSuites: true,
+		CurvePreferences:         []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
 	//Set the server`s TLSConfig field to use the tlsConfig  variable we just
 	//created
 	s := http.Server{
-		Addr:    *addr,
-		Handler: app.Routes(),
-		// TLSConfig:    &tlsConfig,
+		Addr:         *addr,
+		Handler:      app.Routes(),
+		TLSConfig:    &tlsConfig,
 		IdleTimeout:  time.Minute, // что всё keep-alive-connections будут автоматические закрыты после 1 минута без действий
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -99,7 +111,7 @@ func main() {
 	//pass in the paths to the TLS certificate and corresponding private key a the
 	//two parametrssss
 	log.Printf("Запуск сервера на %s", *addr)
-	s.ListenAndServe()
+	s.ListenAndServeTLS(".\tls cert.pem", ".\tls key.pem")
 }
 func opendb(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", dsn) // sql.Open() it does initialize the pool for future use

@@ -10,14 +10,14 @@ import (
 	"github.com/justinas/nosurf"
 )
 
-//	func secureHeaders(next http.Handler) http.Handler {
-//		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//			// TODO: Execute our middleware logic here..
-//			w.Header().Set("X-XSS-Protection", "1;mode=block")
-//			w.Header().Set("X-Frame-Options", "deny")
-//			next.ServeHTTP(w, r)
-//		})
-//	}
+func secureHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Execute our middleware logic here..
+		w.Header().Set("X-XSS-Protection", "1;mode=block")
+		w.Header().Set("X-Frame-Options", "deny")
+		next.ServeHTTP(w, r)
+	})
+}
 func (app *application) authenticate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//check if auserId value exists in the session. If this *isnt
